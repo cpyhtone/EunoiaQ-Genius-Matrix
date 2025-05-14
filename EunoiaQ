@@ -1,0 +1,633 @@
+
+Code
+Description
+
+
+eunoiaq-genius v3
+CodePreview
+import { useState, useEffect } from 'react'
+import { Button } from "/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "/components/ui/card"
+import { Input } from "/components/ui/input"
+import { Label } from "/components/ui/label"
+import { Textarea } from "/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "/components/ui/table"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts"
+import { Loader2, BrainCircuit, Shield, Key, Sparkles } from "lucide-react"
+
+type DataRow = Record<string, string | number>
+type Transformation = 'normalize' | 'extract-features' | 'summarize' | 'mitigate-bias' | 'none'
+type Model = 'eunoiaq' | 'gpt-4' | 'claude-3' | 'llama-3' | 'gemini-pro'
+type KnowledgeModule = 'finance' | 'healthcare' | 'technology' | 'general' | 'ethics'
+
+interface ApiKeyStatus {
+  valid: boolean
+  loading: boolean
+  modelCapabilities: string[]
+}
+
+export default function EunoiaQGenius() {
+  const [rawData, setRawData] = useState<DataRow[]>([])
+  const [processedData, setProcessedData] = useState<DataRow[]>([])
+  const [transformation, setTransformation] = useState<Transformation>('none')
+  const [visualizationType, setVisualizationType] = useState<'line' | 'bar'>('line')
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [apiKey, setApiKey] = useState('')
+  const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>({
+    valid: false,
+    loading: false,
+    modelCapabilities: []
+  })
+  const [selectedModel, setSelectedModel] = useState<Model>('eunoiaq')
+  const [knowledgeModules, setKnowledgeModules] = useState<KnowledgeModule[]>(['general', 'ethics'])
+  const [customPrompt, setCustomPrompt] = useState('')
+  const [processingLog, setProcessingLog] = useState<string[]>([])
+  const [eunoiaqConfig, setEunoiaqConfig] = useState({
+    creativity: 0.7,
+    precision: 0.8,
+    ethicalAlignment: 0.9
+  })
+
+  // Validate API key when it changes
+  useEffect(() => {
+    if (apiKey.length > 30) {
+      validateApiKey()
+    }
+  }, [apiKey])
+
+  // Simulate API key validation
+  const validateApiKey = () => {
+    setApiKeyStatus(prev => ({...prev, loading: true}))
+    setProcessingLog(prev => [...prev, 'Validating API key...'])
+    
+    setTimeout(() => {
+      const isValid = apiKey.length > 30
+      const capabilities = isValid ? [
+        'data-analysis',
+        'knowledge-integration',
+        ...(selectedModel === 'eunoiaq' ? ['ethical-mitigation'] : [])
+      ] : []
+      
+      setApiKeyStatus({
+        valid: isValid,
+        loading: false,
+        modelCapabilities: capabilities
+      })
+      
+      setProcessingLog(prev => [
+        ...prev, 
+        isValid ? 'API key validated successfully' : 'Invalid API key format',
+        ...(isValid ? [`Activated capabilities: ${capabilities.join(', ')}`] : [])
+      ])
+    }, 1500)
+  }
+
+  // Simulate knowledge module synchronization
+  useEffect(() => {
+    if (knowledgeModules.length > 0) {
+      setProcessingLog(prev => [
+        ...prev, 
+        `Synchronized knowledge modules: ${knowledgeModules.join(', ')}`,
+        ...(knowledgeModules.includes('ethics') ? ['Ethical guardrails activated'] : [])
+      ])
+    }
+  }, [knowledgeModules])
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setProcessingLog(prev => [...prev, `Processing file: ${file.name}`])
+    
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string
+        const lines = content.split('\n')
+        const headers = lines[0].split(',')
+        const data = lines.slice(1).map(line => {
+          const values = line.split(',')
+          return headers.reduce((obj, header, index) => {
+            obj[header.trim()] = values[index]?.trim() || ''
+            return obj
+          }, {} as DataRow)
+        })
+        setRawData(data)
+        setProcessedData(data)
+        setProcessingLog(prev => [
+          ...prev, 
+          `Successfully parsed ${data.length} rows`,
+          'Initializing EunoiaQ context...'
+        ])
+      } catch (error) {
+        setProcessingLog(prev => [...prev, `Error parsing file: ${error}`])
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  const applyTransformation = () => {
+    if (!apiKeyStatus.valid) {
+      setProcessingLog(prev => [...prev, 'Error: Valid API key required'])
+      return
+    }
+
+    setIsProcessing(true)
+    setProcessingLog(prev => [
+      ...prev, 
+      `Starting ${transformation} transformation with ${selectedModel}`,
+      `Using knowledge: ${knowledgeModules.join(', ')}`,
+      ...(selectedModel === 'eunoiaq' ? ['EunoiaQ ethical alignment active'] : [])
+    ])
+    
+    // Simulate AI processing with different models
+    setTimeout(() => {
+      let transformedData = [...rawData]
+      let logEntries: string[] = []
+      
+      if (transformation === 'normalize') {
+        transformedData = transformedData.map(row => {
+          const newRow = {...row}
+          Object.keys(newRow).forEach(key => {
+            if (typeof newRow[key] === 'string' && !isNaN(Number(newRow[key]))) {
+              newRow[key] = Number(newRow[key]) / 100
+            }
+          })
+          return newRow
+        })
+        logEntries.push('Applied normalization to numeric fields')
+      } 
+      else if (transformation === 'extract-features') {
+        transformedData = transformedData.map(row => {
+          const newRow = {...row}
+          Object.keys(newRow).forEach(key => {
+            if (typeof newRow[key] === 'string') {
+              newRow[key] = (newRow[key] as string).length
+            }
+          })
+          return newRow
+        })
+        logEntries.push('Extracted string length features')
+      }
+      else if (transformation === 'summarize') {
+        transformedData = transformedData.map(row => {
+          const newRow = {...row}
+          Object.keys(newRow).forEach(key => {
+            if (typeof newRow[key] === 'string') {
+              newRow[key] = (newRow[key] as string).substring(0, 50) + '...'
+            }
+          })
+          return newRow
+        })
+        logEntries.push('Summarized text fields')
+      }
+      else if (transformation === 'mitigate-bias') {
+        // Simulate bias mitigation
+        transformedData = transformedData.map(row => {
+          const newRow = {...row}
+          Object.keys(newRow).forEach(key => {
+            if (typeof newRow[key] === 'string' && 
+                ['gender', 'race', 'ethnicity'].includes(key.toLowerCase())) {
+              // Anonymize sensitive fields
+              newRow[key] = 'REDACTED'
+            }
+          })
+          return newRow
+        })
+        logEntries.push(
+          'Applied bias mitigation protocols',
+          'Redacted sensitive personal information',
+          'Ethical review completed'
+        )
+      }
+
+      if (selectedModel === 'eunoiaq') {
+        logEntries.push(
+          'EunoiaQ cognitive alignment complete',
+          'Knowledge integration verified',
+          'Output quality assurance passed'
+        )
+      }
+
+      setProcessedData(transformedData)
+      setIsProcessing(false)
+      setProcessingLog(prev => [...prev, ...logEntries, 'Transformation completed successfully'])
+    }, 2500)
+  }
+
+  const prepareChartData = () => {
+    if (processedData.length === 0) return []
+    
+    return processedData.map((row, index) => {
+      const chartRow: Record<string, string | number> = { index }
+      Object.keys(row).forEach(key => {
+        if (typeof row[key] === 'number') {
+          chartRow[key] = row[key] as number
+        }
+      })
+      return chartRow
+    })
+  }
+
+  const toggleKnowledgeModule = (module: KnowledgeModule) => {
+    setKnowledgeModules(prev => 
+      prev.includes(module) 
+        ? prev.filter(m => m !== module) 
+        : [...prev, module]
+    )
+  }
+
+  const adjustEunoiaqParameter = (param: keyof typeof eunoiaqConfig, value: number) => {
+    setEunoiaqConfig(prev => ({
+      ...prev,
+      [param]: Math.round(value * 10) / 10
+    }))
+  }
+
+  return (
+    <div className="container mx-auto p-4 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-purple-500" />
+            <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
+              EunoiaQ Genius Matrix
+            </span>
+          </CardTitle>
+          <CardDescription>
+            Cognitive AI platform with integrated knowledge mitigation and ethical alignment
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* API Key and Model Section */}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="api-key" className="flex items-center gap-2">
+                  <Key className="w-4 h-4" />
+                  API Key
+                </Label>
+                <Input
+                  id="api-key"
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Enter your EunoiaQ API key"
+                  className={apiKeyStatus.valid ? 'border-green-500' : apiKeyStatus.loading ? 'border-yellow-500' : ''}
+                />
+                {apiKeyStatus.loading && (
+                  <div className="text-sm text-yellow-600 mt-1 flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Validating key...
+                  </div>
+                )}
+                {apiKeyStatus.valid && (
+                  <div className="text-sm text-green-600 mt-1 flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    Key validated - {apiKeyStatus.modelCapabilities.length} capabilities unlocked
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label>AI Model</Label>
+                <Select 
+                  value={selectedModel} 
+                  onValueChange={(value: Model) => setSelectedModel(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="eunoiaq" className="font-bold">
+                      <span className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        EunoiaQ Matrix
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="gpt-4">GPT-4</SelectItem>
+                    <SelectItem value="claude-3">Claude 3</SelectItem>
+                    <SelectItem value="llama-3">Llama 3</SelectItem>
+                    <SelectItem value="gemini-pro">Gemini Pro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedModel === 'eunoiaq' && (
+                <div className="space-y-3">
+                  <div>
+                    <Label>Creativity</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={eunoiaqConfig.creativity}
+                        onChange={(e) => adjustEunoiaqParameter('creativity', parseFloat(e.target.value))}
+                        className="w-full"
+                      />
+                      <span className="text-sm w-8">{eunoiaqConfig.creativity}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Precision</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={eunoiaqConfig.precision}
+                        onChange={(e) => adjustEunoiaqParameter('precision', parseFloat(e.target.value))}
+                        className="w-full"
+                      />
+                      <span className="text-sm w-8">{eunoiaqConfig.precision}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Ethical Alignment</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={eunoiaqConfig.ethicalAlignment}
+                        onChange={(e) => adjustEunoiaqParameter('ethicalAlignment', parseFloat(e.target.value))}
+                        className="w-full"
+                      />
+                      <span className="text-sm w-8">{eunoiaqConfig.ethicalAlignment}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Knowledge Modules Section */}
+            <div className="space-y-4">
+              <div>
+                <Label className="flex items-center gap-2">
+                  <BrainCircuit className="w-4 h-4" />
+                  Knowledge Modules
+                </Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {(['finance', 'healthcare', 'technology', 'general', 'ethics'] as KnowledgeModule[]).map(module => (
+                    <Button
+                      key={module}
+                      variant={knowledgeModules.includes(module) ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => toggleKnowledgeModule(module)}
+                      className={`justify-start ${module === 'ethics' ? 'border-purple-500' : ''}`}
+                    >
+                      {module === 'ethics' ? (
+                        <span className="flex items-center gap-1">
+                          <Shield className="w-3 h-3" />
+                          {module.charAt(0).toUpperCase() + module.slice(1)}
+                        </span>
+                      ) : (
+                        module.charAt(0).toUpperCase() + module.slice(1)
+                      )}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label>Custom Prompt</Label>
+                <Textarea
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="Add custom instructions for the AI..."
+                  className="min-h-[100px]"
+                />
+              </div>
+            </div>
+
+            {/* Data Input Section */}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="data-upload">Upload Data (CSV)</Label>
+                <Input 
+                  id="data-upload" 
+                  type="file" 
+                  accept=".csv" 
+                  onChange={handleFileUpload} 
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label>AI Transformation</Label>
+                <Select 
+                  value={transformation} 
+                  onValueChange={(value: Transformation) => setTransformation(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select transformation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="normalize">Normalize Data</SelectItem>
+                    <SelectItem value="extract-features">Extract Features</SelectItem>
+                    <SelectItem value="summarize">Summarize Text</SelectItem>
+                    <SelectItem value="mitigate-bias">Mitigate Bias</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button 
+                onClick={applyTransformation} 
+                disabled={rawData.length === 0 || isProcessing || !apiKeyStatus.valid}
+                className="w-full"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Cognitive Processing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Apply EunoiaQ Transformation
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Processing Log */}
+      {processingLog.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Cognitive Process Log</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md max-h-60 overflow-y-auto font-mono text-sm">
+              {processingLog.map((log, index) => (
+                <div 
+                  key={index} 
+                  className={`py-1 border-b border-gray-200 dark:border-gray-700 ${
+                    log.includes('Error') ? 'text-red-500' : 
+                    log.includes('EunoiaQ') ? 'text-purple-600 dark:text-purple-400' : 
+                    log.includes('Ethical') ? 'text-green-600 dark:text-green-400' : ''
+                  }`}
+                >
+                  {log}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Processed Data Display */}
+      {processedData.length > 0 && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <span className="flex items-center gap-2">
+                  Processed Data Matrix
+                  {selectedModel === 'eunoiaq' && (
+                    <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded-full">
+                      EunoiaQ Optimized
+                    </span>
+                  )}
+                </span>
+              </CardTitle>
+              <CardDescription>
+                Showing {processedData.length} cognitive units
+                {knowledgeModules.length > 0 && (
+                  <span> · Knowledge context: {knowledgeModules.join(', ')}</span>
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-auto max-h-96 border rounded-lg">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background">
+                    <TableRow>
+                      {Object.keys(processedData[0]).map(header => (
+                        <TableHead key={header}>{header}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {processedData.map((row, index) => (
+                      <TableRow key={index}>
+                        {Object.values(row).map((value, i) => (
+                          <TableCell key={i} className={value === 'REDACTED' ? 'text-red-500 font-mono' : ''}>
+                            {value}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Visualization */}
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                <CardTitle>Knowledge Visualization</CardTitle>
+                <div className="flex items-center gap-4">
+                  <Select 
+                    value={visualizationType} 
+                    onValueChange={(value: 'line' | 'bar') => setVisualizationType(value)}
+                    className="w-[180px]"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chart type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="line">Line Chart</SelectItem>
+                      <SelectItem value="bar">Bar Chart</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {selectedModel === 'eunoiaq' && (
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Shield className="w-4 h-4" />
+                      Ethical visualization
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                {visualizationType === 'line' ? (
+                  <LineChart
+                    width={800}
+                    height={300}
+                    data={prepareChartData()}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    {Object.keys(processedData[0]).filter(key => key !== 'index').map((key) => (
+                      <Line 
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        stroke={`#${Math.floor(Math.random()*16777215).toString(16)}`}
+                        activeDot={{ r: 8 }}
+                      />
+                    ))}
+                  </LineChart>
+                ) : (
+                  <BarChart
+                    width={800}
+                    height={300}
+                    data={prepareChartData()}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    {Object.keys(processedData[0]).filter(key => key !== 'index').map((key) => (
+                      <Bar 
+                        key={key}
+                        dataKey={key}
+                        fill={`#${Math.floor(Math.random()*16777215).toString(16)}`}
+                      />
+                    ))}
+                  </BarChart>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter className="text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-4">
+                <span>Model: {selectedModel}</span>
+                <span>Knowledge: {knowledgeModules.join(', ')}</span>
+                {selectedModel === 'eunoiaq' && (
+                  <>
+                    <span>Creativity: {eunoiaqConfig.creativity}</span>
+                    <span>Precision: {eunoiaqConfig.precision}</span>
+                    <span>Ethics: {eunoiaqConfig.ethicalAlignment}</span>
+                  </>
+                )}
+              </div>
+</CardFooter>
+</Card> 
+</> )} 
+</div>
+)
+}
